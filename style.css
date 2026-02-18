@@ -1,0 +1,205 @@
+:root {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+    --accent-color: #1a1a1a;
+    --gray-light: #f4f4f4;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Helvetica', Arial, sans-serif;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+/* Header & Logo */
+.header {
+    padding: 20px 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    width: 100%;
+    background: rgba(255,255,255,0.9);
+    z-index: 1000;
+    border-bottom: 1.5px solid #eee;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo-img {
+    height: 65px; /* Настрой под свое лого */
+    width: auto;
+}
+
+.brand-name {
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+nav a {
+    text-decoration: none;
+    color: var(--text-color);
+    margin-left: 25px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: 0.3s;
+}
+
+nav a:hover { opacity: 0.6; }
+
+/* Hero Section */
+.hero {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 0 10%;
+}
+
+.hero h1 {
+    font-size: 4rem;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 20px;
+}
+
+.hero h1 span {
+    background: #000;
+    color: #fff;
+    padding: 0 10px;
+}
+
+.btn {
+    margin-top: 30px;
+    padding: 15px 40px;
+    background: #000;
+    color: #fff;
+    text-decoration: none;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    background: #333;
+    transform: translateY(-3px);
+}
+
+/* Steps */
+.section-title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 50px;
+    text-transform: uppercase;
+}
+
+.steps { padding: 100px 10%; background: var(--gray-light); }
+
+.steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 40px;
+}
+
+.step-card {
+    background: #fff;
+    padding: 40px;
+    border: 1px solid #000;
+    position: relative;
+}
+
+.step-num {
+    font-size: 3rem;
+    font-weight: 800;
+    opacity: 0.1;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+}
+
+/* Gallery */
+.gallery { padding: 100px 5%; }
+
+.photo-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.photo-item {
+    aspect-ratio: 1 / 1;
+    background: #eee;
+    overflow: hidden;
+    border: 1px solid #eee;
+    border-radius: 10px;
+}
+
+.photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: 0.5s;
+    filter: grayscale(40%);
+}
+
+.photo-item:hover img {
+    filter: grayscale(0%);
+    transform: scale(1.05);
+}
+
+/* Footer */
+.footer {
+    padding: 100px 10%;
+    background: #000;
+    color: #fff;
+    text-align: center;
+}
+
+.social-links {
+    margin: 30px 0;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+.social-links a {
+    color: #fff;
+    text-decoration: none;
+    border-bottom: 1px solid #fff;
+    padding-bottom: 5px;
+}
+
+/* Animations */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s ease-out;
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .hero h1 { font-size: 2.5rem; }
+    .photo-grid { grid-template-columns: repeat(2, 1fr); }
+    .header { flex-direction: column; gap: 10px; }
+}
