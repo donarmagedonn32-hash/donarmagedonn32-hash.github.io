@@ -352,6 +352,10 @@
                     <div class="sl-head"><span>Резкость</span><span class="sl-val" id="sharpnessVal">40</span></div>
                     <input type="range" id="sharpness" min="0" max="100" value="40">
                 </div>
+                <div class="slider-row">
+                    <div class="sl-head"><span>Дизеринг</span><span class="sl-val" id="ditherVal">20</span></div>
+                    <input type="range" id="dither" min="0" max="100" value="20">
+                </div>
             </div>
             <button class="btn-generate" id="generateBtn">Сгенерировать макет</button>
         </div>
@@ -560,6 +564,7 @@ const sliders = {
     saturation: document.getElementById('saturation'),
     hue:        document.getElementById('hue'),
     sharpness:  document.getElementById('sharpness'),
+    dither:     document.getElementById('dither'),
 };
 const sliderVals = {
     brightness: document.getElementById('brightnessVal'),
@@ -567,6 +572,7 @@ const sliderVals = {
     saturation: document.getElementById('saturationVal'),
     hue:        document.getElementById('hueVal'),
     sharpness:  document.getElementById('sharpnessVal'),
+    dither:     document.getElementById('ditherVal'),
 };
 
 // ─── ИНИЦИАЛИЗАЦИЯ ПАЛИТРЫ ────────────────────────────────────────────────────
@@ -677,6 +683,7 @@ function runDithering(){
     const brightness=+sliders.brightness.value,contrast=+sliders.contrast.value;
     const saturation=+sliders.saturation.value,hueShift=+sliders.hue.value;
     const sharpness=+sliders.sharpness.value;
+    const ditherStr=(+sliders.dither.value)/100; // 0 = без дизеринга, 1 = полный
 
     let buf=new Float32Array(rawBuffer);
     for(let i=0;i<gridSize*gridSize;i++){
@@ -693,14 +700,18 @@ function runDithering(){
         const b=Math.max(0,Math.min(255,buf[i*3+2]));
         const nearest=getNearestColor(r,g,b);
         finalPixels[i]=nearest;
-        const er=r-nearest.r,eg=g-nearest.g,eb=b-nearest.b;
-        const ae=(dx,dy)=>{
-            const nx=x+dx,ny=y+dy;
-            if(nx<0||nx>=gridSize||ny<0||ny>=gridSize)return;
-            const ni=ny*gridSize+nx;
-            buf[ni*3]+=er/8;buf[ni*3+1]+=eg/8;buf[ni*3+2]+=eb/8;
-        };
-        ae(1,0);ae(2,0);ae(-1,1);ae(0,1);ae(1,1);ae(0,2);
+        if(ditherStr>0){
+            const er=(r-nearest.r)*ditherStr;
+            const eg=(g-nearest.g)*ditherStr;
+            const eb=(b-nearest.b)*ditherStr;
+            const ae=(dx,dy)=>{
+                const nx=x+dx,ny=y+dy;
+                if(nx<0||nx>=gridSize||ny<0||ny>=gridSize)return;
+                const ni=ny*gridSize+nx;
+                buf[ni*3]+=er/8;buf[ni*3+1]+=eg/8;buf[ni*3+2]+=eb/8;
+            };
+            ae(1,0);ae(2,0);ae(-1,1);ae(0,1);ae(1,1);ae(0,2);
+        }
     }
     if(hasGenerated) drawPreview();
 }
