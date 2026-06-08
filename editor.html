@@ -242,11 +242,21 @@
             .editor-layout { grid-template-columns:1fr; }
             .preview-panel {
                 position:relative; top:0;
-                height:auto; min-height:300px;
+                height:auto;
                 border-right:none; border-bottom:1px solid var(--border);
-                padding:24px 20px;
+                padding:20px 16px;
             }
-            #previewCanvas { max-height:65vw; }
+            .canvas-frame {
+                width: 100%;
+                max-width: min(90vw, 90vw);
+                aspect-ratio: 1/1;
+                padding: 8px;
+            }
+            #previewCanvas {
+                width: 100% !important;
+                height: 100% !important;
+                max-height: none;
+            }
             .controls-panel { padding:20px 16px; }
             .section-label { font-size:0.7rem; }
         }
