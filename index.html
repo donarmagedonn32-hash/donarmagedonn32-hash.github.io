@@ -448,7 +448,10 @@
                 brick.className = 'lego-brick';
                 const size = Math.round(20 + Math.random() * 22); // 20–42px
                 const color = colors[Math.floor(Math.random() * colors.length)];
-                const left = Math.random() * 94;
+                // 65% вероятность — боковые зоны (0–22% или 78–98%), 35% — середина
+                const left = Math.random() < 0.65
+                    ? (Math.random() < 0.5 ? Math.random() * 22 : 78 + Math.random() * 18)
+                    : 22 + Math.random() * 56;
                 const duration = 13 + Math.random() * 22; // 13–35s
                 const delay = -(Math.random() * 30);       // уже в полёте
                 brick.style.cssText = `width:${size}px;height:${size}px;left:${left}%;background:${color};animation-duration:${duration}s;animation-delay:${delay}s;`;
