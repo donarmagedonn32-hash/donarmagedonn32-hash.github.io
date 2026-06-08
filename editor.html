@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать эскиз — COVRICK</title>
+    <link rel="icon" type="image/png" href="logomini.png">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg:       #0a0a0a;
+            --panel-l:  #0e0e0e;
+            --panel-r:  #111111;
+            --card:     #171717;
+            --border:   rgba(255,255,255,0.07);
+            --text:     #ffffff;
+            --muted:    #888;
+            --accent:   #ff3366;
+            --header-h: 70px;
+        }
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+        html { scroll-behavior: smooth; }
+        body { background:var(--bg); color:var(--text); font-family:'Montserrat',sans-serif; overflow-x:hidden; }
+        a { text-decoration:none; color:inherit; }
+
+        /* ── HEADER ────────────────────────────────────────────────── */
+        header {
+            position: fixed; top:0; left:0; width:100%; height:var(--header-h);
+            background: rgba(10,10,10,0.92); backdrop-filter:blur(14px);
+            border-bottom:1px solid var(--border);
+            display:flex; align-items:center; justify-content:space-between;
+            padding:0 28px; z-index:1000;
+        }
+        .logo { display:flex; align-items:center; gap:12px; transition:opacity .25s; }
+        .logo:hover { opacity:.75; }
+        .logo-img { width:44px; height:44px; overflow:hidden; }
+        .logo-img img { width:100%; height:100%; object-fit:cover; }
+        .brand { font-size:22px; font-weight:800; letter-spacing:1px; text-transform:uppercase; }
+        .back-link { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); transition:color .25s; }
+        .back-link:hover { color:var(--accent); }
+
+        /* ── LAYOUT ────────────────────────────────────────────────── */
+        .editor-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            min-height: 100vh;
+            margin-top: var(--header-h);
+            align-items: start;
+        }
+
+        /* ── LEFT — PREVIEW ────────────────────────────────────────── */
+        .preview-panel {
+            position: sticky;
+            top: var(--header-h);
+            height: calc(100vh - var(--header-h));
+            background: var(--panel-l);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        .preview-placeholder {
+            display: flex; flex-direction:column; align-items:center; gap:16px;
+            text-align:center; opacity:.3; pointer-events:none; user-select:none;
+        }
+        .preview-placeholder svg { opacity:.5; }
+        .preview-placeholder p { font-size:14px; font-weight:600; color:var(--muted); }
+
+        .canvas-frame {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 10px;
+            width: 100%;
+            max-width: calc(100vh - var(--header-h) - 60px);
+            aspect-ratio: 1 / 1;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
+
+        #previewCanvas {
+            display: block;
+            image-rendering: pixelated;
+            border-radius: 6px;
+            background: #fff;
+            width: 100%;
+            height: 100%;
+        }
+
+        .preview-meta {
+            display: flex; gap:12px; flex-wrap:wrap; justify-content:center;
+        }
+        .meta-chip {
+            padding: 5px 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 50px;
+            font-size: 12px; font-weight: 600; color: var(--muted);
+        }
+        .meta-chip strong { color: var(--text); }
+
+        /* ── RIGHT — CONTROLS ──────────────────────────────────────── */
+        .controls-panel {
+            background: var(--panel-r);
+            min-height: calc(100vh - var(--header-h));
+            padding-bottom: 60px;
+            overflow-y: auto;
+        }
+
+        /* Section block */
+        .ctrl-block {
+            padding: 24px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+        .ctrl-block:last-child { border-bottom: none; }
+        .block-label {
+            font-size: 10px; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 2px; color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        /* Upload */
+        .upload-zone {
+            display: flex; flex-direction:column; align-items:center; justify-content:center;
+            gap:10px; padding:28px 20px;
+            border: 2px dashed rgba(255,255,255,0.1);
+            border-radius: 12px; cursor:pointer;
+            transition: border-color .25s, background .25s;
+            background: rgba(255,255,255,0.02);
+            text-align: center;
+        }
+        .upload-zone:hover { border-color: var(--accent); background:rgba(255,51,102,.05); }
+        .upload-zone.has-file { border-style:solid; border-color:rgba(255,255,255,0.15); padding:16px; gap:6px; }
+        .upload-zone svg { opacity:.35; }
+        .upload-zone .uz-title { font-size:14px; font-weight:700; }
+        .upload-zone .uz-sub   { font-size:12px; color:var(--muted); }
+        .upload-zone .uz-name  { font-size:13px; font-weight:600; color:var(--accent); }
+        #imageInput { display:none; }
+
+        /* Size selector */
+        .size-grid { display:flex; gap:8px; flex-wrap:wrap; }
+        .size-btn {
+            flex:1; min-width:80px; padding:10px 6px; border-radius:8px;
+            border: 1.5px solid rgba(255,255,255,0.1);
+            background:transparent; color:var(--muted);
+            font-family:'Montserrat',sans-serif; font-size:13px; font-weight:700;
+            cursor:pointer; transition:all .2s; text-align:center;
+        }
+        .size-btn .sz-main { display:block; font-size:14px; }
+        .size-btn .sz-sub  { display:block; font-size:10px; margin-top:2px; color:#555; }
+        .size-btn.active   { background:var(--accent); border-color:var(--accent); color:#fff; }
+        .size-btn.active .sz-sub { color:rgba(255,255,255,0.6); }
+        .size-btn:not(.active):hover { border-color:rgba(255,255,255,0.3); color:var(--text); }
+
+        /* Cropper */
+        .cropper-wrap { height:260px; border-radius:10px; overflow:hidden; background:#000; }
+
+        /* Sliders */
+        .sliders-list { display:flex; flex-direction:column; gap:16px; }
+        .slider-row { display:flex; flex-direction:column; gap:6px; }
+        .slider-row .sl-head {
+            display:flex; justify-content:space-between; align-items:center;
+            font-size:12px; font-weight:700; color:#bbb;
+        }
+        .slider-row .sl-val { color:#fff; min-width:32px; text-align:right; font-size:13px; }
+        input[type="range"] { width:100%; accent-color:var(--accent); cursor:pointer; }
+
+        /* Generate btn */
+        .btn-generate {
+            width:100%; padding:14px; margin-top:20px;
+            background:var(--accent); border:none; border-radius:10px;
+            color:#fff; font-family:'Montserrat',sans-serif; font-size:15px; font-weight:700;
+            cursor:pointer; transition:all .25s; letter-spacing:.5px;
+        }
+        .btn-generate:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(255,51,102,.4); }
+
+        /* Toolbar */
+        .tool-row { display:flex; gap:8px; flex-wrap:wrap; }
+        .tool-btn {
+            flex:1; min-width:90px; padding:10px 8px; border-radius:8px;
+            border:1.5px solid rgba(255,255,255,0.1);
+            background:transparent; color:var(--muted);
+            font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700;
+            cursor:pointer; transition:all .2s; text-align:center;
+        }
+        .tool-btn .tb-icon { font-size:18px; display:block; margin-bottom:3px; }
+        .tool-btn .tb-label{ display:block; }
+        .tool-btn.active   { background:rgba(255,51,102,.15); border-color:var(--accent); color:#fff; }
+        .tool-btn:not(.active):hover { border-color:rgba(255,255,255,.3); color:var(--text); }
+
+        .hist-row { display:flex; gap:8px; margin-top:10px; }
+        .icon-btn {
+            flex:1; padding:9px; border-radius:8px;
+            border:1.5px solid rgba(255,255,255,0.1);
+            background:transparent; color:var(--muted); font-size:15px;
+            cursor:pointer; transition:all .2s; display:flex; align-items:center; justify-content:center; gap:6px;
+            font-family:'Montserrat',sans-serif; font-size:12px; font-weight:700;
+        }
+        .icon-btn:hover:not(:disabled) { border-color:rgba(255,255,255,.3); color:var(--text); }
+        .icon-btn:disabled { opacity:.22; cursor:not-allowed; }
+
+        /* Palette */
+        .palette-grid { display:flex; flex-wrap:wrap; gap:6px; }
+        .color-swatch {
+            width:30px; height:30px; border-radius:5px;
+            border:2px solid transparent; cursor:pointer;
+            transition:transform .15s, border .15s;
+        }
+        .color-swatch:hover { transform:scale(1.15); }
+        .color-swatch.active { border:2.5px solid #fff; transform:scale(1.2); box-shadow:0 0 10px rgba(255,255,255,.3); }
+
+        /* Breakdown */
+        .breakdown-list { display:flex; flex-direction:column; gap:6px; max-height:260px; overflow-y:auto; }
+        .bd-row {
+            display:flex; align-items:center; gap:10px;
+            padding:7px 10px; border-radius:8px;
+            background:rgba(255,255,255,.03);
+            border:1px solid var(--border);
+            font-size:12px;
+        }
+        .bd-swatch { width:18px; height:18px; border-radius:3px; flex-shrink:0; border:1px solid rgba(0,0,0,.3); }
+        .bd-name { flex:1; color:#bbb; font-weight:600; }
+        .bd-count { font-weight:800; color:var(--accent); min-width:28px; text-align:right; }
+
+        /* Download */
+        .btn-download {
+            width:100%; padding:14px; border:none; border-radius:10px;
+            background:#1e1e1e; color:var(--text);
+            border:1.5px solid rgba(255,255,255,0.12);
+            font-family:'Montserrat',sans-serif; font-size:14px; font-weight:700;
+            cursor:pointer; transition:all .25s; display:flex; align-items:center; justify-content:center; gap:8px;
+        }
+        .btn-download:hover { background:#2a2a2a; border-color:rgba(255,255,255,.25); transform:translateY(-1px); }
+
+        /* ── MOBILE ────────────────────────────────────────────────── */
+        @media (max-width: 800px) {
+            .editor-layout { grid-template-columns:1fr; }
+            .preview-panel {
+                position:relative; top:0;
+                height:auto; min-height:300px;
+                border-right:none; border-bottom:1px solid var(--border);
+                padding:24px 20px;
+            }
+            #previewCanvas { max-height:65vw; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="index.html" class="logo">
+        <div class="logo-img"><img src="logo.png" alt="COVRICK"></div>
+        <div class="brand">covrick</div>
+    </a>
+    <a href="index.html" class="back-link">← На главную</a>
+</header>
+
+<div class="editor-layout">
+
+    <!-- ═══════════════════════════════════════════════
+         LEFT — PREVIEW
+    ═══════════════════════════════════════════════════ -->
+    <div class="preview-panel" id="previewPanel">
+
+        <!-- Заглушка до генерации -->
+        <div class="preview-placeholder" id="previewPlaceholder">
+            <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+            </svg>
+            <p>Загрузи изображение<br>и нажми «Сгенерировать»</p>
+        </div>
+
+        <div class="canvas-frame" id="canvasFrame" style="display:none;">
+            <canvas id="previewCanvas"></canvas>
+        </div>
+
+        <div class="preview-meta" id="previewMeta" style="display:none;"></div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════
+         RIGHT — CONTROLS
+    ═══════════════════════════════════════════════════ -->
+    <div class="controls-panel">
+
+        <!-- 1. ЗАГРУЗКА -->
+        <div class="ctrl-block">
+            <div class="block-label">Шаг 1 — Загрузи изображение</div>
+            <label class="upload-zone" for="imageInput" id="uploadZone">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span class="uz-title">Нажми или перетащи файл</span>
+                <span class="uz-sub">JPG · PNG · WEBP</span>
+            </label>
+            <input type="file" id="imageInput" accept="image/*">
+        </div>
+
+        <!-- 2. РАЗМЕР (скрыт до загрузки) -->
+        <div class="ctrl-block" id="sizeBlock" style="display:none;">
+            <div class="block-label">Шаг 2 — Выбери размер</div>
+            <div class="size-grid">
+                <button class="size-btn active" data-size="32">
+                    <span class="sz-main">32 × 32</span>
+                    <span class="sz-sub">1 024 кубика</span>
+                </button>
+                <button class="size-btn" data-size="48">
+                    <span class="sz-main">48 × 48</span>
+                    <span class="sz-sub">2 304 кубика</span>
+                </button>
+                <button class="size-btn" data-size="64">
+                    <span class="sz-main">64 × 64</span>
+                    <span class="sz-sub">4 096 кубиков</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. КРОППЕР (скрыт до загрузки) -->
+        <div class="ctrl-block" id="cropBlock" style="display:none;">
+            <div class="block-label">Шаг 3 — Кадрируй</div>
+            <div class="cropper-wrap">
+                <img id="imageToCrop" src="" alt="">
+            </div>
+        </div>
+
+        <!-- 4. НАСТРОЙКИ (скрыты до загрузки) -->
+        <div class="ctrl-block" id="slidersBlock" style="display:none;">
+            <div class="block-label">Шаг 4 — Настрой изображение</div>
+            <div class="sliders-list">
+                <div class="slider-row">
+                    <div class="sl-head"><span>Яркость</span><span class="sl-val" id="brightnessVal">0</span></div>
+                    <input type="range" id="brightness" min="-100" max="100" value="0">
+                </div>
+                <div class="slider-row">
+                    <div class="sl-head"><span>Контраст</span><span class="sl-val" id="contrastVal">0</span></div>
+                    <input type="range" id="contrast" min="-100" max="100" value="0">
+                </div>
+                <div class="slider-row">
+                    <div class="sl-head"><span>Насыщенность</span><span class="sl-val" id="saturationVal">0</span></div>
+                    <input type="range" id="saturation" min="-100" max="100" value="0">
+                </div>
+                <div class="slider-row">
+                    <div class="sl-head"><span>Сдвиг оттенка</span><span class="sl-val" id="hueVal">0</span>°</div>
+                    <input type="range" id="hue" min="-180" max="180" value="0">
+                </div>
+                <div class="slider-row">
+                    <div class="sl-head"><span>Резкость</span><span class="sl-val" id="sharpnessVal">40</span></div>
+                    <input type="range" id="sharpness" min="0" max="100" value="40">
+                </div>
+            </div>
+            <button class="btn-generate" id="generateBtn">Сгенерировать макет</button>
+        </div>
+
+        <!-- 5. ИНСТРУМЕНТЫ (скрыты до генерации) -->
+        <div class="ctrl-block" id="toolsBlock" style="display:none;">
+            <div class="block-label">Редактор пикселей</div>
+            <div class="tool-row">
+                <button class="tool-btn active" data-tool="brush">
+                    <span class="tb-icon">✏️</span>
+                    <span class="tb-label">Кисть</span>
+                </button>
+                <button class="tool-btn" data-tool="fill">
+                    <span class="tb-icon">🪣</span>
+                    <span class="tb-label">Заливка</span>
+                </button>
+                <button class="tool-btn" data-tool="colorize">
+                    <span class="tb-icon">🎨</span>
+                    <span class="tb-label">Все того цвета</span>
+                </button>
+            </div>
+            <div class="hist-row">
+                <button class="icon-btn" id="undoBtn" disabled>↩ Отменить</button>
+                <button class="icon-btn" id="redoBtn" disabled>↪ Повторить</button>
+            </div>
+        </div>
+
+        <!-- 6. ПАЛИТРА (скрыта до генерации) -->
+        <div class="ctrl-block" id="paletteBlock" style="display:none;">
+            <div class="block-label">Палитра COVRICK — выбери цвет для редактора</div>
+            <div id="paletteGrid" class="palette-grid"></div>
+        </div>
+
+        <!-- 7. СПИСОК ДЕТАЛЕЙ (скрыт до генерации) -->
+        <div class="ctrl-block" id="breakdownBlock" style="display:none;">
+            <div class="block-label">Список деталей</div>
+            <div id="breakdownList" class="breakdown-list"></div>
+        </div>
+
+        <!-- 8. СКАЧАТЬ PDF (скрыт до генерации) -->
+        <div class="ctrl-block" id="downloadBlock" style="display:none;">
+            <button class="btn-download" id="downloadPdfBtn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Скачать инструкцию PDF
+            </button>
+        </div>
+
+    </div><!-- /controls-panel -->
+</div><!-- /editor-layout -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+const { jsPDF } = window.jspdf;
+
+// ─── ПАЛИТРА 31 ЦВЕТ (из Color_list_advanced_fixed.xlsx) ─────────────────────
+const palette = [
+    // Чёрный → серые
+    { id: 1,  name:"Black",               hex:"#1B1B1B", r: 27, g: 27, b: 27 },
+    { id: 2,  name:"Pearl Dark Gray",      hex:"#575857", r: 87, g: 88, b: 87 },
+    { id: 3,  name:"Dark Bluish Gray",     hex:"#595D60", r: 89, g: 93, b: 96 },
+    { id: 4,  name:"Light Gray",           hex:"#646464", r:100, g:100, b:100 },
+    { id: 5,  name:"Flat Silver",          hex:"#8D9096", r:141, g:144, b:150 },
+    // Коричневые / нугатовые
+    { id: 6,  name:"Dark Brown",           hex:"#372100", r: 55, g: 33, b:  0 },
+    { id: 7,  name:"Brown",                hex:"#543324", r: 84, g: 51, b: 36 },
+    { id: 8,  name:"Reddish Brown",        hex:"#5F3109", r: 95, g: 49, b:  9 },
+    { id: 9,  name:"Nougat",               hex:"#BB805A", r:187, g:128, b: 90 },
+    { id: 10, name:"Little Dark Nougat",   hex:"#B3967B", r:179, g:150, b:123 },
+    { id: 11, name:"Light Nougat 2",       hex:"#FECCB0", r:254, g:204, b:176 },
+    { id: 12, name:"Light Nougat",         hex:"#FF9966", r:255, g:153, b:102 },
+    // Красные
+    { id: 13, name:"Dark Red",             hex:"#720012", r:114, g:  0, b: 18 },
+    { id: 14, name:"Red",                  hex:"#B40000", r:180, g:  0, b:  0 },
+    // Оранжевые
+    { id: 15, name:"Orange",               hex:"#F58624", r:245, g:134, b: 36 },
+    { id: 16, name:"Bright Orange",        hex:"#FF7E30", r:255, g:126, b: 48 },
+    // Жёлтый
+    { id: 17, name:"Bright Light Yellow",  hex:"#FFEC6C", r:255, g:236, b:108 },
+    // Зелёные
+    { id: 18, name:"Lime",                 hex:"#54DE37", r: 84, g:222, b: 55 },
+    { id: 19, name:"Bright Green",         hex:"#4B9F4A", r: 75, g:159, b: 74 },
+    { id: 20, name:"Green",                hex:"#2E5543", r: 46, g: 85, b: 67 },
+    { id: 21, name:"Dark Green",           hex:"#1E4D2B", r: 30, g: 77, b: 43 },
+    // Синие
+    { id: 22, name:"Dark Blue",            hex:"#0A3463", r: 10, g: 52, b: 99 },
+    { id: 23, name:"Blue",                 hex:"#0057A6", r:  0, g: 87, b:166 },
+    { id: 24, name:"Maersk Blue",          hex:"#36AEBF", r: 54, g:174, b:191 },
+    { id: 25, name:"Bright Light Blue",    hex:"#9FC3E9", r:159, g:195, b:233 },
+    // Фиолетовые
+    { id: 26, name:"Dark Purple",          hex:"#3F3691", r: 63, g: 54, b:145 },
+    { id: 27, name:"Purple",               hex:"#8A12A8", r:138, g: 18, b:168 },
+    // Розовые / лавандовые
+    { id: 28, name:"Medium Dark Pink",     hex:"#CE81AE", r:206, g:129, b:174 },
+    { id: 29, name:"Pink",                 hex:"#F7C5DD", r:247, g:197, b:221 },
+    { id: 30, name:"Lavender",             hex:"#E1D5ED", r:225, g:213, b:237 },
+    // Белый
+    { id: 31, name:"White",               hex:"#F4F4F4", r:244, g:244, b:244 }
+];
+
+// ─── ЦВЕТОВЫЕ УТИЛИТЫ ─────────────────────────────────────────────────────────
+function rgbToLab(r,g,b){
+    let r_=r/255,g_=g/255,b_=b/255;
+    r_=r_>0.04045?Math.pow((r_+0.055)/1.055,2.4):r_/12.92;
+    g_=g_>0.04045?Math.pow((g_+0.055)/1.055,2.4):g_/12.92;
+    b_=b_>0.04045?Math.pow((b_+0.055)/1.055,2.4):b_/12.92;
+    let x=(r_*0.4124+g_*0.3576+b_*0.1805)*100;
+    let y=(r_*0.2126+g_*0.7152+b_*0.0722)*100;
+    let z=(r_*0.0193+g_*0.1192+b_*0.9505)*100;
+    x/=95.047;y/=100;z/=108.883;
+    x=x>0.008856?Math.pow(x,1/3):(7.787*x)+16/116;
+    y=y>0.008856?Math.pow(y,1/3):(7.787*y)+16/116;
+    z=z>0.008856?Math.pow(z,1/3):(7.787*z)+16/116;
+    return{l:(116*y)-16,a:500*(x-y),b:200*(y-z)};
+}
+palette.forEach(c=>{c.lab=rgbToLab(c.r,c.g,c.b);});
+
+function getNearestColor(r,g,b){
+    const t=rgbToLab(r,g,b);
+    let best=palette[0],d=Infinity;
+    for(const c of palette){
+        const dd=(t.l-c.lab.l)**2+(t.a-c.lab.a)**2+(t.b-c.lab.b)**2;
+        if(dd<d){d=dd;best=c;}
+    }
+    return best;
+}
+
+function rgbToHsl(r,g,b){
+    r/=255;g/=255;b/=255;
+    const mx=Math.max(r,g,b),mn=Math.min(r,g,b);
+    let h,s,l=(mx+mn)/2;
+    if(mx===mn){h=s=0;}else{
+        const d=mx-mn;
+        s=l>.5?d/(2-mx-mn):d/(mx+mn);
+        switch(mx){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;default:h=(r-g)/d+4;}
+        h/=6;
+    }
+    return{h,s,l};
+}
+function hslToRgb(h,s,l){
+    if(s===0){const v=Math.round(l*255);return{r:v,g:v,b:v};}
+    const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q;
+    const hue=t=>{if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<.5)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;};
+    return{r:Math.round(hue(h+1/3)*255),g:Math.round(hue(h)*255),b:Math.round(hue(h-1/3)*255)};
+}
+
+function applyFilters(r,g,b,brightness,contrast,saturation,hueShift){
+    const f=(259*(contrast+255))/(255*(259-contrast));
+    r=f*(r-128)+128+brightness;g=f*(g-128)+128+brightness;b=f*(b-128)+128+brightness;
+    const gray=.2989*r+.5870*g+.1140*b,sf=1+saturation/100;
+    r=gray+sf*(r-gray);g=gray+sf*(g-gray);b=gray+sf*(b-gray);
+    r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));
+    if(hueShift!==0){
+        const hsl=rgbToHsl(r,g,b);hsl.h=(hsl.h+hueShift/360+1)%1;
+        const rgb=hslToRgb(hsl.h,hsl.s,hsl.l);r=rgb.r;g=rgb.g;b=rgb.b;
+    }
+    return{r:Math.max(0,Math.min(255,r)),g:Math.max(0,Math.min(255,g)),b:Math.max(0,Math.min(255,b))};
+}
+
+function applySharpen(buf,w,h,pct){
+    if(pct<=0)return buf;
+    const out=new Float32Array(buf),s=(pct/100)*2.5;
+    for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+        const i=y*w+x;
+        for(let c=0;c<3;c++){
+            const center=buf[i*3+c];
+            const avg=(buf[((y-1)*w+x)*3+c]+buf[(y*w+x-1)*3+c]+buf[(y*w+x+1)*3+c]+buf[((y+1)*w+x)*3+c])*.25;
+            out[i*3+c]=Math.max(0,Math.min(255,center+s*(center-avg)));
+        }
+    }
+    return out;
+}
+
+// ─── СОСТОЯНИЕ ────────────────────────────────────────────────────────────────
+let gridSize=32, cropper=null, rawBuffer=null;
+let finalPixels=[], historyStack=[], redoStack=[];
+let currentEditorColor=palette[0], currentTool='brush', hasGenerated=false;
+
+// ─── DOM ──────────────────────────────────────────────────────────────────────
+const imageInput      = document.getElementById('imageInput');
+const uploadZone      = document.getElementById('uploadZone');
+const imageToCrop     = document.getElementById('imageToCrop');
+const sizeBlock       = document.getElementById('sizeBlock');
+const cropBlock       = document.getElementById('cropBlock');
+const slidersBlock    = document.getElementById('slidersBlock');
+const toolsBlock      = document.getElementById('toolsBlock');
+const paletteBlock    = document.getElementById('paletteBlock');
+const breakdownBlock  = document.getElementById('breakdownBlock');
+const downloadBlock   = document.getElementById('downloadBlock');
+const generateBtn     = document.getElementById('generateBtn');
+const previewCanvas   = document.getElementById('previewCanvas');
+const previewPlaceholder = document.getElementById('previewPlaceholder');
+const previewMeta     = document.getElementById('previewMeta');
+const undoBtn         = document.getElementById('undoBtn');
+const redoBtn         = document.getElementById('redoBtn');
+const paletteGrid     = document.getElementById('paletteGrid');
+const breakdownList   = document.getElementById('breakdownList');
+const downloadPdfBtn  = document.getElementById('downloadPdfBtn');
+
+const sliders = {
+    brightness: document.getElementById('brightness'),
+    contrast:   document.getElementById('contrast'),
+    saturation: document.getElementById('saturation'),
+    hue:        document.getElementById('hue'),
+    sharpness:  document.getElementById('sharpness'),
+};
+const sliderVals = {
+    brightness: document.getElementById('brightnessVal'),
+    contrast:   document.getElementById('contrastVal'),
+    saturation: document.getElementById('saturationVal'),
+    hue:        document.getElementById('hueVal'),
+    sharpness:  document.getElementById('sharpnessVal'),
+};
+
+// ─── ИНИЦИАЛИЗАЦИЯ ПАЛИТРЫ ────────────────────────────────────────────────────
+function initPalette(){
+    paletteGrid.innerHTML='';
+    palette.forEach(color=>{
+        const sw=document.createElement('div');
+        sw.className='color-swatch'+(color.id===currentEditorColor.id?' active':'');
+        sw.style.backgroundColor=color.hex;
+        sw.title=`${color.id} — ${color.name}`;
+        sw.addEventListener('click',()=>{
+            document.querySelectorAll('.color-swatch').forEach(el=>el.classList.remove('active'));
+            sw.classList.add('active');
+            currentEditorColor=color;
+        });
+        paletteGrid.appendChild(sw);
+    });
+}
+initPalette();
+
+// ─── СЛАЙДЕРЫ — живое обновление ─────────────────────────────────────────────
+Object.keys(sliders).forEach(k=>{
+    sliders[k].addEventListener('input',()=>{
+        sliderVals[k].textContent=sliders[k].value;
+        if(hasGenerated&&rawBuffer) runDithering();
+    });
+});
+
+// ─── ПЕРЕКЛЮЧАТЕЛЬ РАЗМЕРА ────────────────────────────────────────────────────
+document.querySelectorAll('.size-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+        document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        gridSize=parseInt(btn.dataset.size);
+        if(cropper) extractRawAndGenerate();
+    });
+});
+
+// ─── ЗАГРУЗКА ИЗОБРАЖЕНИЯ ────────────────────────────────────────────────────
+imageInput.addEventListener('change',e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+        imageToCrop.src=ev.target.result;
+        // Обновляем зону загрузки
+        uploadZone.classList.add('has-file');
+        uploadZone.innerHTML=`
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff3366" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span class="uz-name">${file.name}</span>
+            <span class="uz-sub">Нажми чтобы сменить</span>`;
+        // Показываем блоки
+        sizeBlock.style.display='block';
+        cropBlock.style.display='block';
+        slidersBlock.style.display='block';
+        // Инициализируем кроппер
+        if(cropper) cropper.destroy();
+        cropper=new Cropper(imageToCrop,{aspectRatio:1,viewMode:1});
+    };
+    reader.readAsDataURL(file);
+});
+
+// Drag & drop
+uploadZone.addEventListener('dragover',e=>{e.preventDefault();uploadZone.style.borderColor='var(--accent)';});
+uploadZone.addEventListener('dragleave',()=>{uploadZone.style.borderColor='';});
+uploadZone.addEventListener('drop',e=>{
+    e.preventDefault(); uploadZone.style.borderColor='';
+    const file=e.dataTransfer.files[0];
+    if(file&&file.type.startsWith('image/')){
+        const dt=new DataTransfer(); dt.items.add(file); imageInput.files=dt.files;
+        imageInput.dispatchEvent(new Event('change'));
+    }
+});
+
+// ─── ГЕНЕРАЦИЯ ────────────────────────────────────────────────────────────────
+generateBtn.addEventListener('click',()=>{ if(cropper) extractRawAndGenerate(); });
+
+function extractRawAndGenerate(){
+    const cc=cropper.getCroppedCanvas({width:gridSize,height:gridSize,imageSmoothingEnabled:true,imageSmoothingQuality:'high'});
+    const data=cc.getContext('2d').getImageData(0,0,gridSize,gridSize).data;
+    rawBuffer=new Float32Array(gridSize*gridSize*3);
+    for(let i=0;i<gridSize*gridSize;i++){rawBuffer[i*3]=data[i*4];rawBuffer[i*3+1]=data[i*4+1];rawBuffer[i*3+2]=data[i*4+2];}
+    runDithering();
+    // Настраиваем холст
+    previewCanvas.width=gridSize*24;
+    previewCanvas.height=gridSize*24;
+    document.getElementById('canvasFrame').style.display='block';
+    previewPlaceholder.style.display='none';
+    drawPreview();
+    // Мета-инфо
+    previewMeta.style.display='flex';
+    previewMeta.innerHTML=`
+        <div class="meta-chip">Размер: <strong>${gridSize}×${gridSize}</strong></div>
+        <div class="meta-chip">Деталей: <strong>${gridSize*gridSize}</strong></div>`;
+    // Показываем блоки редактора
+    toolsBlock.style.display='block';
+    paletteBlock.style.display='block';
+    breakdownBlock.style.display='block';
+    downloadBlock.style.display='block';
+    hasGenerated=true;
+    historyStack=[];redoStack=[];
+    undoBtn.disabled=true;redoBtn.disabled=true;
+}
+
+// ─── ДИЗЕРИНГ Atkinson ────────────────────────────────────────────────────────
+function runDithering(){
+    const brightness=+sliders.brightness.value,contrast=+sliders.contrast.value;
+    const saturation=+sliders.saturation.value,hueShift=+sliders.hue.value;
+    const sharpness=+sliders.sharpness.value;
+
+    let buf=new Float32Array(rawBuffer);
+    for(let i=0;i<gridSize*gridSize;i++){
+        const f=applyFilters(buf[i*3],buf[i*3+1],buf[i*3+2],brightness,contrast,saturation,hueShift);
+        buf[i*3]=f.r;buf[i*3+1]=f.g;buf[i*3+2]=f.b;
+    }
+    buf=applySharpen(buf,gridSize,gridSize,sharpness);
+
+    finalPixels=new Array(gridSize*gridSize);
+    for(let y=0;y<gridSize;y++) for(let x=0;x<gridSize;x++){
+        const i=y*gridSize+x;
+        const r=Math.max(0,Math.min(255,buf[i*3]));
+        const g=Math.max(0,Math.min(255,buf[i*3+1]));
+        const b=Math.max(0,Math.min(255,buf[i*3+2]));
+        const nearest=getNearestColor(r,g,b);
+        finalPixels[i]=nearest;
+        const er=r-nearest.r,eg=g-nearest.g,eb=b-nearest.b;
+        const ae=(dx,dy)=>{
+            const nx=x+dx,ny=y+dy;
+            if(nx<0||nx>=gridSize||ny<0||ny>=gridSize)return;
+            const ni=ny*gridSize+nx;
+            buf[ni*3]+=er/8;buf[ni*3+1]+=eg/8;buf[ni*3+2]+=eb/8;
+        };
+        ae(1,0);ae(2,0);ae(-1,1);ae(0,1);ae(1,1);ae(0,2);
+    }
+    if(hasGenerated) drawPreview();
+}
+
+// ─── ОТРИСОВКА LEGO (плоский стиль, тонкий зазор) ────────────────────────────
+function drawLegoCell(ctx, px, py, s, r, g, b) {
+    // Тонкий зазор между кубиками — тёмный фон просвечивает
+    const gap = Math.max(0.2, s * 0.01);
+    const bx = px + gap, by = py + gap, bs = s - gap * 2;
+
+    // Поверхность кубика (плоская, основной цвет)
+    ctx.fillStyle = `rgb(${r},${g},${b})`;
+    ctx.fillRect(bx, by, bs, bs);
+
+    // Шпенёк — плоский круг, чуть светлее кубика
+    const cx = px + s / 2, cy = py + s / 2;
+    const rad = bs * 0.28;
+    const lr = Math.min(255, r + 22);
+    const lg = Math.min(255, g + 22);
+    const lb = Math.min(255, b + 22);
+    ctx.fillStyle = `rgb(${lr},${lg},${lb})`;
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.fill();
+
+    // Тонкий тёмный контур шпенька
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = Math.max(0.4, s * 0.028);
+    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2); ctx.stroke();
+}
+
+function drawPreview(){
+    const ctx = previewCanvas.getContext('2d');
+    const s = previewCanvas.width / gridSize;
+
+    // Заливаем фон тёмным — именно он виден в зазорах между кубиками
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+    for(let y=0;y<gridSize;y++) for(let x=0;x<gridSize;x++){
+        const c=finalPixels[y*gridSize+x];
+        drawLegoCell(ctx,x*s,y*s,s,c.r,c.g,c.b);
+    }
+    updateBreakdown();
+}
+
+function updateBreakdown(){
+    const counts={};
+    finalPixels.forEach(c=>{counts[c.id]=(counts[c.id]||0)+1;});
+    const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+    breakdownList.innerHTML=sorted.map(([id,cnt])=>{
+        const c=palette.find(p=>p.id==id);
+        return`<div class="bd-row">
+            <div class="bd-swatch" style="background:${c.hex}"></div>
+            <span class="bd-name">${c.name}</span>
+            <span class="bd-count">${cnt}</span>
+        </div>`;
+    }).join('');
+}
+
+// ─── ИСТОРИЯ ──────────────────────────────────────────────────────────────────
+function saveHistory(){
+    historyStack.push([...finalPixels]);
+    redoStack=[];undoBtn.disabled=false;redoBtn.disabled=true;
+    if(historyStack.length>30)historyStack.shift();
+}
+undoBtn.addEventListener('click',()=>{
+    if(!historyStack.length)return;
+    redoStack.push([...finalPixels]);
+    finalPixels=historyStack.pop();
+    drawPreview();
+    undoBtn.disabled=historyStack.length===0;
+    redoBtn.disabled=false;
+});
+redoBtn.addEventListener('click',()=>{
+    if(!redoStack.length)return;
+    historyStack.push([...finalPixels]);
+    finalPixels=redoStack.pop();
+    drawPreview();
+    redoBtn.disabled=redoStack.length===0;
+    undoBtn.disabled=false;
+});
+document.addEventListener('keydown',e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){e.preventDefault();undoBtn.click();}
+    if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.key==='z'&&e.shiftKey))){e.preventDefault();redoBtn.click();}
+});
+
+// ─── ИНСТРУМЕНТЫ ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.tool-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+        document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        currentTool=btn.dataset.tool;
+        const cursors={brush:'crosshair',fill:'cell',colorize:'pointer'};
+        previewCanvas.style.cursor=cursors[currentTool]||'crosshair';
+    });
+});
+
+function floodFill(startIdx,newColor){
+    const targetId=finalPixels[startIdx].id;
+    if(targetId===newColor.id)return;
+    saveHistory();
+    const stack=[startIdx],visited=new Uint8Array(gridSize*gridSize);
+    while(stack.length){
+        const i=stack.pop();
+        if(visited[i]||finalPixels[i].id!==targetId)continue;
+        visited[i]=1;finalPixels[i]=newColor;
+        const x=i%gridSize,y=i/gridSize|0;
+        if(x>0)stack.push(i-1);if(x<gridSize-1)stack.push(i+1);
+        if(y>0)stack.push(i-gridSize);if(y<gridSize-1)stack.push(i+gridSize);
+    }
+    drawPreview();
+}
+
+function colorizeAll(targetId,newColor){
+    if(targetId===newColor.id)return;
+    saveHistory();
+    for(let i=0;i<finalPixels.length;i++) if(finalPixels[i].id===targetId) finalPixels[i]=newColor;
+    drawPreview();
+}
+
+// ─── РИСОВАНИЕ (клик + зажатие мыши/тач) ────────────────────────────────────
+let _isPainting = false;
+let _paintSaved = false; // история сохраняется один раз за мазок
+
+function _getCellCoords(clientX, clientY) {
+    const rect = previewCanvas.getBoundingClientRect();
+    const x = Math.floor((clientX - rect.left) / rect.width * gridSize);
+    const y = Math.floor((clientY - rect.top) / rect.height * gridSize);
+    return { x, y };
+}
+
+function _paintCell(clientX, clientY) {
+    if (!finalPixels.length) return;
+    const { x, y } = _getCellCoords(clientX, clientY);
+    if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
+    const idx = y * gridSize + x;
+    if (currentTool === 'brush') {
+        if (finalPixels[idx].id !== currentEditorColor.id) {
+            if (!_paintSaved) { saveHistory(); _paintSaved = true; }
+            finalPixels[idx] = currentEditorColor;
+            drawPreview();
+        }
+    }
+}
+
+function _handleDown(clientX, clientY) {
+    if (!finalPixels.length) return;
+    const { x, y } = _getCellCoords(clientX, clientY);
+    if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
+    const idx = y * gridSize + x;
+    if (currentTool === 'fill') {
+        floodFill(idx, currentEditorColor);
+    } else if (currentTool === 'colorize') {
+        colorizeAll(finalPixels[idx].id, currentEditorColor);
+    } else if (currentTool === 'brush') {
+        _isPainting = true;
+        _paintSaved = false;
+        _paintCell(clientX, clientY);
+    }
+}
+
+// Mouse events
+previewCanvas.addEventListener('mousedown', e => {
+    e.preventDefault();
+    _handleDown(e.clientX, e.clientY);
+});
+previewCanvas.addEventListener('mousemove', e => {
+    if (!_isPainting) return;
+    _paintCell(e.clientX, e.clientY);
+});
+window.addEventListener('mouseup', () => { _isPainting = false; });
+
+// Touch events
+previewCanvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const t = e.touches[0];
+    _handleDown(t.clientX, t.clientY);
+}, { passive: false });
+previewCanvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!_isPainting) return;
+    const t = e.touches[0];
+    _paintCell(t.clientX, t.clientY);
+}, { passive: false });
+window.addEventListener('touchend', () => { _isPainting = false; });
+
+// ─── PDF ЭКСПОРТ ─────────────────────────────────────────────────────────────
+downloadPdfBtn.addEventListener('click',()=>{
+    const doc=new jsPDF('p','mm','a4');
+    const half=gridSize/2;
+    const mainMm=gridSize===32?3:gridSize===48?2:1.5;
+    const mainX=105-(gridSize*mainMm)/2;
+
+    doc.setTextColor(0,0,0);doc.setFont("helvetica","bold");doc.setFontSize(22);
+    doc.text("COVRICK-EDITOR",105,20,{align:"center"});
+    doc.setFont("helvetica","normal");doc.setFontSize(16);
+    doc.text(`Instruction ${gridSize}×${gridSize}`,105,30,{align:"center"});
+    for(let y=0;y<gridSize;y++) for(let x=0;x<gridSize;x++){
+        doc.setFillColor(finalPixels[y*gridSize+x].hex);
+        doc.rect(mainX+x*mainMm,45+y*mainMm,mainMm,mainMm,'F');
+    }
+    const sy=45+gridSize*mainMm+10,schSz=18,schX=105-schSz;
+    doc.setDrawColor(0);doc.setLineWidth(0.5);doc.setFontSize(12);doc.setFont("helvetica","bold");
+    [["1","3"],["2","4"]].forEach((row,ri)=>row.forEach((n,ci)=>{
+        doc.rect(schX+ci*schSz,sy+ri*schSz,schSz,schSz,'S');
+        doc.text(n,schX+ci*schSz+schSz/2,sy+ri*schSz+schSz/2+2,{align:"center"});
+    }));
+    doc.setFontSize(9);doc.setFont("helvetica","normal");
+    doc.text("Section Map",105,sy+schSz*2+6,{align:"center"});
+
+    const cellMm=gridSize===32?6.8:gridSize===48?4.5:3.2;
+    const sectors=[
+        {name:"Section 1",offsetX:0,   offsetY:0   },
+        {name:"Section 2",offsetX:0,   offsetY:half},
+        {name:"Section 3",offsetX:half,offsetY:0   },
+        {name:"Section 4",offsetX:half,offsetY:half},
+    ];
+    sectors.forEach(sec=>{
+        doc.addPage();
+        doc.setTextColor(0,0,0);doc.setFont("helvetica","bold");doc.setFontSize(20);
+        doc.text("COVRICK-EDITOR",105,15,{align:"center"});
+        doc.setFontSize(18);doc.text(sec.name,105,25,{align:"center"});
+        const parts={},px=[];
+        for(let y=0;y<half;y++){
+            const row=[];
+            for(let x=0;x<half;x++){
+                const c=finalPixels[(sec.offsetY+y)*gridSize+(sec.offsetX+x)];
+                row.push(c);parts[c.id]=(parts[c.id]||0)+1;
+            }
+            px.push(row);
+        }
+        doc.setFontSize(11);doc.setFont("helvetica","bold");doc.text("Parts List:",15,40);
+        doc.setFont("helvetica","normal");doc.setFontSize(9);
+        let specY=48;const sq=3.5;
+        Object.keys(parts).sort((a,b)=>+a-+b).forEach(id=>{
+            const c=palette.find(p=>p.id==id);
+            doc.setFillColor(c.hex);doc.rect(15,specY-3,sq,sq,'F');
+            doc.setDrawColor(200,200,200);doc.rect(15,specY-3,sq,sq,'S');
+            doc.setTextColor(0,0,0);
+            doc.text(`${id}. ${c.name} — ${parts[id]} pcs`,20,specY);
+            specY+=5;
+        });
+        const gx=88,gy=40;doc.setFontSize(8);
+        for(let y=0;y<half;y++) for(let x=0;x<half;x++){
+            const c=px[y][x];
+            doc.setFillColor(c.hex);doc.rect(gx+x*cellMm,gy+y*cellMm,cellMm,cellMm,'F');
+            doc.setDrawColor(180,180,180);doc.rect(gx+x*cellMm,gy+y*cellMm,cellMm,cellMm,'S');
+            const br=(c.r*299+c.g*587+c.b*114)/1000;
+            doc.setTextColor(br>125?0:255);
+            doc.text(c.id.toString(),gx+x*cellMm+cellMm/2,gy+y*cellMm+cellMm/2+1,{align:"center",baseline:"middle"});
+        }
+    });
+    doc.save(`COVRICK-${gridSize}x${gridSize}.pdf`);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"C:\\\\Users\\\\alex3\\\\Desktop\\\\Projects!!!\\\\COVRICK\\\\covrick_site\\(new\\)\\\\.claude\")",
+      "mcp__Claude_Preview__preview_start",
+      "WebFetch(domain:stereohoare.com)",
+      "mcp__Claude_in_Chrome__list_connected_browsers",
+      "Bash(node -e ' *)",
+      "Read(//c/Users/alex3/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/e6c1ace1-6875-4b14-982d-8bc3afe226ca/29d5720d-5258-4b56-96bd-24ba6b21f7c1/skills/xlsx/**)",
+      "Bash(python -c ' *)",
+      "Bash(pip install *)",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(git remote *)"
+    ]
+  }
+}

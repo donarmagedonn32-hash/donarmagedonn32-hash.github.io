@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>О нас / Документация — COVRICK</title>
+    <link rel="icon" type="image/png" href="logomini.png">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --accent-color: #ff3366;
+            --card-bg: #151515;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); overflow-x: hidden; line-height: 1.6; }
+        a { text-decoration: none; color: inherit; }
+
+        header {
+            position: fixed; top: 0; width: 100%;
+            background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px);
+            z-index: 1000; padding: 15px 5%;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .logo-container { display: flex; align-items: center; gap: 15px; transition: opacity 0.3s; }
+        .logo-container:hover { opacity: 0.8; }
+        .logo-img { width: 60px; height: 60px; background-color: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .logo-img img { width: 100%; height: 100%; object-fit: cover; }
+        .brand-name { font-size: 28px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+        .back-to-home { color: var(--text-muted); font-weight: 600; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; transition: color 0.3s; }
+        .back-to-home:hover { color: var(--accent-color); }
+
+        .doc-section { padding: 150px 5% 100px; max-width: 800px; margin: 0 auto; min-height: 80vh; }
+        .section-title { text-align: center; font-size: 2.5rem; margin-bottom: 20px; font-weight: 800; }
+        .section-subtitle { text-align: center; color: var(--text-muted); margin-bottom: 60px; font-size: 1.1rem; }
+
+        .doc-block {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+        }
+        .doc-block h3 { color: var(--accent-color); font-size: 1.5rem; margin-bottom: 15px; }
+        .doc-block p { color: #ccc; margin-bottom: 15px; }
+        .doc-block ul { list-style: inside; color: #ccc; margin-bottom: 15px; padding-left: 10px; }
+
+        footer { background: #050505; padding: 60px 5% 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); }
+        .copyright { color: #555; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="logo-container">
+            <div class="logo-img"><img src="logo.png" alt="COVRICK Logo"></div>
+            <div class="brand-name">covrick</div>
+        </a>
+        <a href="index.html" class="back-to-home">На главную</a>
+    </header>
+
+    <section class="doc-section">
+        <h1 class="section-title">О нас и документация</h1>
+        <p class="section-subtitle">Официальная информация, правила использования и комплектация наборов.</p>
+
+        <div class="doc-block">
+            <h3>1. Информация о товарах</h3>
+            <p>Мы предлагаем конструкторы для создания пиксель-арта на основе музыкальных обложек. Доступно два формата:</p>
+            <ul>
+                <li><strong>Набор 32x32:</strong> 1024 детали (размер детали: 1х1), пластина-основа 25,5 x 25,5 см.</li>
+                <li><strong>Набор 48x48:</strong> 2304 детали (размер детали: 1х1), пластина-основа 40 ч 40 см.</li>
+            </ul>
+            <p>Также мы разрабатываем инструкции в формате многостраничного PDF, которые доступны по QR-коду.</p>
+        </div>
+
+        <div class="doc-block">
+            <h3>2. Правила безопасности</h3>
+            <p><strong>Внимание! Возрастное ограничение: 12+</strong></p>
+            <p>Наборы COVRICK содержат большое количество мелких деталей (блоки размером 1x1). Храните конструктор в недоступном для маленьких детей месте, чтобы исключить риск проглатывания деталей или попадания их в дыхательные пути.</p>
+        </div>
+
+        <div class="doc-block">
+            <h3>3. Правила хранения</h3>
+            <p>Рекомендуется хранить детали в сухом месте, избегать длительного воздействия прямых солнечных лучей (чтобы пластик не выцветал) и высоких температур.</p>
+        </div>
+        
+        <div class="doc-block">
+            <h3>4. Пример инструкции (PDF)</h3>
+            <p>Каждый набор сопровождается индивидуальной электронной инструкцией. Для удобства использования мы форматируем наши инструкции в формате PDF с корректным отображением всех шрифтов и нумерацией секций.</p>
+        </div>
+
+    </section>
+
+    <footer>
+        <div class="copyright">© 2026 covrick. Все права защищены.  12+</div>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "covrick-editor",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["http-server", ".", "-p", "3001", "--cors", "-o", "editor.html"],
+      "port": 3001
+    }
+  ]
+}
