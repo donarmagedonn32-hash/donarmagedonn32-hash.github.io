@@ -52,6 +52,21 @@
 
         footer { background: #050505; padding: 60px 5% 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); }
         .copyright { color: #555; font-size: 0.9rem; }
+
+        /* ── АДАПТАЦИЯ ─────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .brand-name { font-size: 20px; }
+            .logo-img { width: 44px; height: 44px; }
+            .section-title { font-size: clamp(1.6rem, 6vw, 2.2rem); }
+            .section-subtitle { font-size: 1rem; margin-bottom: 36px; }
+            .doc-section { padding: 110px 4% 70px; }
+            .doc-block { padding: 28px 20px; }
+            .doc-block h3 { font-size: 1.2rem; }
+        }
+        @media (max-width: 480px) {
+            .back-to-home { font-size: 12px; letter-spacing: 0; }
+            .doc-block { padding: 22px 16px; }
+        }
     </style>
 </head>
 <body>

@@ -259,6 +259,27 @@
         .footer-site-link { display: block; margin-bottom: 20px; color: var(--text-muted); transition: color 0.3s; }
         .footer-site-link:hover { color: var(--accent-color); }
         .copyright { color: #555; font-size: 0.9rem; }
+
+        /* ── АДАПТАЦИЯ ─────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .brand-name { font-size: 20px; }
+            .logo-img { width: 44px; height: 44px; }
+            .hero h1 { font-size: clamp(1.8rem, 7vw, 2.8rem); }
+            .hero p { font-size: 1rem; }
+            .btn { padding: 13px 28px; font-size: 16px; }
+            section { padding: 70px 5%; }
+            .section-title { font-size: clamp(1.6rem, 6vw, 2.2rem); margin-bottom: 36px; }
+            .footer-cta { font-size: clamp(1.3rem, 5vw, 1.8rem); }
+            .product-card { min-width: unset; width: 100%; }
+            .spec-item { min-width: 140px; }
+        }
+        @media (max-width: 480px) {
+            header { padding: 12px 4%; }
+            section { padding: 60px 4%; }
+            .step-card { padding: 28px 20px; }
+            .social-links { flex-direction: column; align-items: center; }
+            .social-btn { width: 100%; max-width: 280px; text-align: center; }
+        }
     </style>
 </head>
 <body>

@@ -76,6 +76,28 @@
 
         footer { background: #050505; padding: 60px 5% 40px; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); }
         .copyright { color: #555; font-size: 0.9rem; }
+
+        /* ── АДАПТАЦИЯ ─────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .brand-name { font-size: 20px; }
+            .logo-img { width: 44px; height: 44px; }
+            .section-title { font-size: clamp(1.6rem, 6vw, 2.2rem); margin-bottom: 36px; }
+            .product-page { padding: 110px 4% 70px; }
+            .product-wrapper { flex-direction: column; gap: 30px; }
+            .product-image { min-width: unset; width: 100%; max-width: 420px; margin: 0 auto; }
+            .product-info { min-width: unset; width: 100%; }
+            .product-info h2 { font-size: 1.5rem; }
+            .price-value { font-size: 2.8rem; }
+            .spec-item { min-width: 140px; }
+            .btn { width: 100%; text-align: center; }
+        }
+        @media (max-width: 480px) {
+            .back-to-home { font-size: 12px; letter-spacing: 0; }
+            .price-section { padding: 40px 16px; }
+            .price-value { font-size: 2.2rem; }
+            .product-list li { font-size: 1rem; }
+            .spec-item { min-width: 100%; }
+        }
     </style>
 </head>
 <body>
