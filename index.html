@@ -275,27 +275,6 @@
         .footer-site-link:hover { color: var(--accent-color); }
         .copyright { color: #555; font-size: 0.9rem; }
 
-        /* ── 1. КАСТОМНЫЙ КУРСОР — один кубик LEGO ────────────── */
-        * { cursor: none !important; }
-        .cur-brick {
-            position: fixed; width: 28px; height: 28px;
-            background: rgba(255,51,102,0.85);
-            border-radius: 4px;
-            pointer-events: none; z-index: 9999;
-            transform: translate(-50%, -50%);
-            box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3), 0 2px 8px rgba(255,51,102,0.3);
-            transition: width 0.15s ease, height 0.15s ease, background 0.15s ease;
-        }
-        .cur-brick::before {
-            content: ''; position: absolute;
-            width: 52%; height: 52%; border-radius: 50%;
-            top: 50%; left: 50%; transform: translate(-50%,-50%);
-            background: rgba(255,100,140,0.9);
-            border: 1.5px solid rgba(0,0,0,0.2);
-            box-shadow: inset 0 1px 2px rgba(255,255,255,0.2);
-        }
-        .cur-brick.hovered { width: 38px; height: 38px; }
-        @media (hover: none) { .cur-brick { display: none; } }
 
         /* ── 7. ПРОГРЕСС-БАР СКРОЛЛА ──────────────────────────── */
         #scroll-progress {
@@ -412,7 +391,6 @@
     <!-- Прогресс-бар скролла -->
     <div id="scroll-progress"></div>
     <!-- Кастомный курсор — LEGO-кубик -->
-    <div class="cur-brick" id="curBrick"></div>
 
     <header>
         <div class="logo-container">
@@ -632,16 +610,6 @@
                 progressBar.style.width = pct + '%';
             }, { passive: true });
 
-            // ── КАСТОМНЫЙ КУРСОР ─────────────────────────────────────────
-            const brick = document.getElementById('curBrick');
-            window.addEventListener('mousemove', e => {
-                brick.style.left = e.clientX + 'px';
-                brick.style.top  = e.clientY + 'px';
-            }, { passive: true });
-            document.querySelectorAll('a, button, .menu-btn, .gallery-item, .step-card, .product-card').forEach(el => {
-                el.addEventListener('mouseenter', () => brick.classList.add('hovered'));
-                el.addEventListener('mouseleave', () => brick.classList.remove('hovered'));
-            });
 
             // ── SCROLL-АНИМАЦИИ (fade-in-up + anim-left/right/zoom) ──────
             const animClasses = ['.fade-in-up', '.anim-left', '.anim-right', '.anim-zoom', '.stats-row'];
