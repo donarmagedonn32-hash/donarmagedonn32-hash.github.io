@@ -40,12 +40,25 @@
         .back-link { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); transition:color .25s; }
         .back-link:hover { color:var(--accent); }
 
+        /* ── DEV NOTICE ────────────────────────────────────────────── */
+        .dev-banner {
+            margin-top: var(--header-h);
+            background: rgba(255,51,102,0.10);
+            border-bottom: 1px solid rgba(255,51,102,0.30);
+            color: var(--text);
+            text-align: center;
+            padding: 10px 20px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: .3px;
+        }
+        .dev-banner strong { color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+
         /* ── LAYOUT ────────────────────────────────────────────────── */
         .editor-layout {
             display: grid;
             grid-template-columns: 1fr 400px;
             min-height: 100vh;
-            margin-top: var(--header-h);
             align-items: start;
         }
 
@@ -281,6 +294,10 @@
     </a>
     <a href="index.html" class="back-link">← На главную</a>
 </header>
+
+<div class="dev-banner">
+    🚧 <strong>В разработке</strong> — раздел создания эскиза работает в тестовом режиме, возможны неточности.
+</div>
 
 <div class="editor-layout">
 

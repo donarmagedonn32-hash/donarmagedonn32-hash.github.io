@@ -11,7 +11,22 @@
       "Bash(pip install *)",
       "Bash(git init *)",
       "Bash(git config *)",
-      "Bash(git remote *)"
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(git fetch *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(findstr /i \"галерея gallery works ex1 ex2\" index.html)",
+      "Bash(findstr /i \"gallery\" index.html)",
+      "Bash(powershell -command \"Select-String -Path 'index.html' -Pattern 'work|img|photo|300|250|width' | Select-Object -First 30\")",
+      "Bash(powershell -command \"Select-String -Path 'index.html' -Pattern 'gallery' | Select-Object -First 20\")",
+      "Bash(powershell -command \"Select-String -Path '*.html' -Pattern 'media' | Select-Object -First 60\")",
+      "Bash(powershell -command \"Select-String -Path 'about.html','faq.html','product-32.html','product-48.html' -Pattern 'media|viewport' | Select-Object LineNumber, Filename, Line\")",
+      "Bash(powershell -command \"Select-String -Path 'index.html' -Pattern 'cube|float|animation' | Select-Object LineNumber, Line | Select-Object -First 30\")",
+      "Bash(powershell -command \"Select-String -Path 'editor.html' -Pattern 'canvas|frame|preview' | Select-Object LineNumber, Line | Select-Object -First 30\")",
+      "Skill(update-config)",
+      "Skill(update-config:*)"
     ]
   }
 }
