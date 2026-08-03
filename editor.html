@@ -402,20 +402,12 @@
                     <input type="range" id="saturation" min="-100" max="100" value="0">
                 </div>
                 <div class="slider-row">
-                    <div class="sl-head"><span>Сдвиг оттенка</span><span class="sl-val" id="hueVal">0</span>°</div>
-                    <input type="range" id="hue" min="-180" max="180" value="0">
-                </div>
-                <div class="slider-row">
                     <div class="sl-head"><span>Сглаживание</span><span class="sl-val" id="smoothingVal">0</span></div>
                     <input type="range" id="smoothing" min="0" max="100" value="0">
                 </div>
                 <div class="slider-row">
                     <div class="sl-head"><span>Резкость</span><span class="sl-val" id="sharpnessVal">10</span></div>
                     <input type="range" id="sharpness" min="0" max="100" value="10">
-                </div>
-                <div class="slider-row">
-                    <div class="sl-head"><span>Дизеринг</span><span class="sl-val" id="ditherVal">0</span></div>
-                    <input type="range" id="dither" min="0" max="100" value="0">
                 </div>
             </div>
             <button class="btn-generate" id="generateBtn">Сгенерировать макет</button>
@@ -815,20 +807,16 @@ const sliders = {
     brightness: document.getElementById('brightness'),
     contrast:   document.getElementById('contrast'),
     saturation: document.getElementById('saturation'),
-    hue:        document.getElementById('hue'),
     smoothing:  document.getElementById('smoothing'),
     sharpness:  document.getElementById('sharpness'),
-    dither:     document.getElementById('dither'),
 };
 const sliderVals = {
     autofix:    document.getElementById('autofixVal'),
     brightness: document.getElementById('brightnessVal'),
     contrast:   document.getElementById('contrastVal'),
     saturation: document.getElementById('saturationVal'),
-    hue:        document.getElementById('hueVal'),
     smoothing:  document.getElementById('smoothingVal'),
     sharpness:  document.getElementById('sharpnessVal'),
-    dither:     document.getElementById('ditherVal'),
 };
 
 // ─── ИНИЦИАЛИЗАЦИЯ ПАЛИТРЫ ────────────────────────────────────────────────────
@@ -967,11 +955,11 @@ function extractRawAndGenerate(){
 // ─── ДИЗЕРИНГ Atkinson ────────────────────────────────────────────────────────
 function runDithering(){
     const brightness=+sliders.brightness.value,contrast=+sliders.contrast.value;
-    const saturation=+sliders.saturation.value,hueShift=+sliders.hue.value;
+    const saturation=+sliders.saturation.value,hueShift=0;
     const smoothing=+sliders.smoothing.value;
     const sharpness=+sliders.sharpness.value;
     const autofix=(+sliders.autofix.value)/100;
-    const ditherStr=(+sliders.dither.value)/100; // 0 = без дизеринга, 1 = полный
+    const ditherStr=0; // дизеринг отключён
 
     let buf=new Float32Array(rawBuffer);
     // Авто-коррекция (баланс белого + уровни) — до ручных фильтров, в legacy выкл.
