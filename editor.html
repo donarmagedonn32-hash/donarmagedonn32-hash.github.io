@@ -402,12 +402,12 @@
                     <input type="range" id="hue" min="-180" max="180" value="0">
                 </div>
                 <div class="slider-row">
-                    <div class="sl-head"><span>Резкость</span><span class="sl-val" id="sharpnessVal">40</span></div>
-                    <input type="range" id="sharpness" min="0" max="100" value="40">
+                    <div class="sl-head"><span>Резкость</span><span class="sl-val" id="sharpnessVal">10</span></div>
+                    <input type="range" id="sharpness" min="0" max="100" value="10">
                 </div>
                 <div class="slider-row">
-                    <div class="sl-head"><span>Дизеринг</span><span class="sl-val" id="ditherVal">20</span></div>
-                    <input type="range" id="dither" min="0" max="100" value="20">
+                    <div class="sl-head"><span>Дизеринг</span><span class="sl-val" id="ditherVal">0</span></div>
+                    <input type="range" id="dither" min="0" max="100" value="0">
                 </div>
             </div>
             <button class="btn-generate" id="generateBtn">Сгенерировать макет</button>
@@ -533,6 +533,19 @@ const palette = [
 ];
 
 // ─── ЦВЕТОВЫЕ УТИЛИТЫ ─────────────────────────────────────────────────────────
+//
+// COLOR_ALGO — переключатель алгоритма подбора цветов.
+//   'v2'     — новый: даунсемпл в линейном свете + CIEDE2000 (точнее по цвету).
+//   'legacy' — старый: браузерный даунсемпл в sRGB + евклидово расстояние Lab (CIE76).
+// Если новый вариант чем-то не устроит — поставь 'legacy', чтобы вернуть прежнее поведение.
+const COLOR_ALGO = 'v2';
+
+// sRGB ↔ линейный свет. Усреднять цвета (даунсемплинг) физически корректно
+// только в линейном пространстве — иначе смешанные участки темнеют и «уходят»
+// по оттенку (например насыщенный фиолет мутнеет в синий).
+function srgbToLinear(v){ v/=255; return v<=0.04045 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); }
+function linearToSrgb(v){ v = v<=0.0031308 ? v*12.92 : 1.055*Math.pow(v,1/2.4)-0.055; return Math.max(0,Math.min(255,v*255)); }
+
 function rgbToLab(r,g,b){
     let r_=r/255,g_=g/255,b_=b/255;
     r_=r_>0.04045?Math.pow((r_+0.055)/1.055,2.4):r_/12.92;
@@ -549,11 +562,56 @@ function rgbToLab(r,g,b){
 }
 palette.forEach(c=>{c.lab=rgbToLab(c.r,c.g,c.b);});
 
+// CIEDE2000 — перцептивно корректная разница цветов.
+// В отличие от простого евклидова расстояния в Lab (CIE76) она
+// правильно обрабатывает сине-фиолетовую область и не «уводит»
+// фиолетовые оттенки в синие.
+function deltaE2000(L1,a1,b1,L2,a2,b2){
+    const rad=Math.PI/180, deg=180/Math.PI;
+    const C1=Math.sqrt(a1*a1+b1*b1), C2=Math.sqrt(a2*a2+b2*b2);
+    const Cbar=(C1+C2)/2;
+    const Cbar7=Math.pow(Cbar,7);
+    const G=0.5*(1-Math.sqrt(Cbar7/(Cbar7+6103515625))); // 25^7 = 6103515625
+    const a1p=(1+G)*a1, a2p=(1+G)*a2;
+    const C1p=Math.sqrt(a1p*a1p+b1*b1), C2p=Math.sqrt(a2p*a2p+b2*b2);
+    let h1p=Math.atan2(b1,a1p)*deg; if(h1p<0)h1p+=360;
+    let h2p=Math.atan2(b2,a2p)*deg; if(h2p<0)h2p+=360;
+    const dLp=L2-L1;
+    const dCp=C2p-C1p;
+    let dhp=0;
+    if(C1p*C2p!==0){
+        dhp=h2p-h1p;
+        if(dhp>180)dhp-=360; else if(dhp<-180)dhp+=360;
+    }
+    const dHp=2*Math.sqrt(C1p*C2p)*Math.sin((dhp/2)*rad);
+    const Lbarp=(L1+L2)/2;
+    const Cbarp=(C1p+C2p)/2;
+    let hbarp;
+    if(C1p*C2p===0){hbarp=h1p+h2p;}
+    else if(Math.abs(h1p-h2p)>180){hbarp=(h1p+h2p+360)/2;}
+    else{hbarp=(h1p+h2p)/2;}
+    const T=1-0.17*Math.cos((hbarp-30)*rad)+0.24*Math.cos((2*hbarp)*rad)
+             +0.32*Math.cos((3*hbarp+6)*rad)-0.20*Math.cos((4*hbarp-63)*rad);
+    const dtheta=30*Math.exp(-Math.pow((hbarp-275)/25,2));
+    const Cbarp7=Math.pow(Cbarp,7);
+    const RC=2*Math.sqrt(Cbarp7/(Cbarp7+6103515625));
+    const SL=1+(0.015*Math.pow(Lbarp-50,2))/Math.sqrt(20+Math.pow(Lbarp-50,2));
+    const SC=1+0.045*Cbarp;
+    const SH=1+0.015*Cbarp*T;
+    const RT=-Math.sin((2*dtheta)*rad)*RC;
+    return Math.sqrt(
+        Math.pow(dLp/SL,2)+Math.pow(dCp/SC,2)+Math.pow(dHp/SH,2)
+        +RT*(dCp/SC)*(dHp/SH)
+    );
+}
+
 function getNearestColor(r,g,b){
     const t=rgbToLab(r,g,b);
     let best=palette[0],d=Infinity;
     for(const c of palette){
-        const dd=(t.l-c.lab.l)**2+(t.a-c.lab.a)**2+(t.b-c.lab.b)**2;
+        const dd = COLOR_ALGO==='legacy'
+            ? (t.l-c.lab.l)**2+(t.a-c.lab.a)**2+(t.b-c.lab.b)**2   // CIE76
+            : deltaE2000(t.l,t.a,t.b,c.lab.l,c.lab.a,c.lab.b);     // CIEDE2000
         if(dd<d){d=dd;best=c;}
     }
     return best;
@@ -724,11 +782,41 @@ uploadZone.addEventListener('drop',e=>{
 // ─── ГЕНЕРАЦИЯ ────────────────────────────────────────────────────────────────
 generateBtn.addEventListener('click',()=>{ if(cropper) extractRawAndGenerate(); });
 
+// Строим rawBuffer (усреднённый цвет каждой ячейки сетки, в sRGB 0..255).
+function buildRawBuffer(){
+    const buf=new Float32Array(gridSize*gridSize*3);
+    if(COLOR_ALGO==='legacy'){
+        // Старый путь: браузер сам ужимает картинку до сетки (усреднение в sRGB).
+        const cc=cropper.getCroppedCanvas({width:gridSize,height:gridSize,imageSmoothingEnabled:true,imageSmoothingQuality:'high'});
+        const data=cc.getContext('2d').getImageData(0,0,gridSize,gridSize).data;
+        for(let i=0;i<gridSize*gridSize;i++){buf[i*3]=data[i*4];buf[i*3+1]=data[i*4+1];buf[i*3+2]=data[i*4+2];}
+        return buf;
+    }
+    // Новый путь: берём картинку с супер-сэмплингом и усредняем каждую ячейку
+    // в ЛИНЕЙНОМ свете — так цвет ячейки получается ярче и вернее по оттенку.
+    const SS=Math.max(4,Math.min(16,Math.round(768/gridSize)));
+    const hiW=gridSize*SS, hiH=gridSize*SS;
+    const cc=cropper.getCroppedCanvas({width:hiW,height:hiH,imageSmoothingEnabled:true,imageSmoothingQuality:'high'});
+    const data=cc.getContext('2d').getImageData(0,0,hiW,hiH).data;
+    const n=SS*SS;
+    for(let gy=0;gy<gridSize;gy++)for(let gx=0;gx<gridSize;gx++){
+        let lr=0,lg=0,lb=0;
+        for(let sy=0;sy<SS;sy++)for(let sx=0;sx<SS;sx++){
+            const idx=(((gy*SS+sy)*hiW)+(gx*SS+sx))*4;
+            lr+=srgbToLinear(data[idx]);
+            lg+=srgbToLinear(data[idx+1]);
+            lb+=srgbToLinear(data[idx+2]);
+        }
+        const i=gy*gridSize+gx;
+        buf[i*3]  =linearToSrgb(lr/n);
+        buf[i*3+1]=linearToSrgb(lg/n);
+        buf[i*3+2]=linearToSrgb(lb/n);
+    }
+    return buf;
+}
+
 function extractRawAndGenerate(){
-    const cc=cropper.getCroppedCanvas({width:gridSize,height:gridSize,imageSmoothingEnabled:true,imageSmoothingQuality:'high'});
-    const data=cc.getContext('2d').getImageData(0,0,gridSize,gridSize).data;
-    rawBuffer=new Float32Array(gridSize*gridSize*3);
-    for(let i=0;i<gridSize*gridSize;i++){rawBuffer[i*3]=data[i*4];rawBuffer[i*3+1]=data[i*4+1];rawBuffer[i*3+2]=data[i*4+2];}
+    rawBuffer=buildRawBuffer();
     runDithering();
     // Настраиваем холст
     previewCanvas.width=gridSize*24;
