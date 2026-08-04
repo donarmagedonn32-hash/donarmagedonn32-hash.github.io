@@ -464,6 +464,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="covrick-fonts.js"></script>
 <script>
 const { jsPDF } = window.jspdf;
 
@@ -1184,35 +1185,97 @@ downloadPdfBtn.addEventListener('click',()=>{
     const mainMm=gridSize===32?3:gridSize===48?2:1.5;
     const mainX=105-(gridSize*mainMm)/2;
 
-    doc.setTextColor(0,0,0);doc.setFont("helvetica","bold");doc.setFontSize(22);
-    doc.text("COVRICK-EDITOR",105,20,{align:"center"});
-    doc.setFont("helvetica","normal");doc.setFontSize(16);
-    doc.text(`Instruction ${gridSize}×${gridSize}`,105,30,{align:"center"});
+    doc.setTextColor(0,0,0);doc.setFont("DejaVuSans","bold");doc.setFontSize(22);
+    doc.text("COVRICK",105,20,{align:"center"});
+    doc.setFont("DejaVuSans","normal");doc.setFontSize(16);
+    doc.text(`Инструкция ${gridSize}×${gridSize}`,105,30,{align:"center"});
     for(let y=0;y<gridSize;y++) for(let x=0;x<gridSize;x++){
         doc.setFillColor(finalPixels[y*gridSize+x].hex);
         doc.rect(mainX+x*mainMm,45+y*mainMm,mainMm,mainMm,'F');
     }
     const sy=45+gridSize*mainMm+10,schSz=18,schX=105-schSz;
-    doc.setDrawColor(0);doc.setLineWidth(0.5);doc.setFontSize(12);doc.setFont("helvetica","bold");
+    doc.setDrawColor(0);doc.setLineWidth(0.5);doc.setFontSize(12);doc.setFont("DejaVuSans","bold");
     [["1","3"],["2","4"]].forEach((row,ri)=>row.forEach((n,ci)=>{
         doc.rect(schX+ci*schSz,sy+ri*schSz,schSz,schSz,'S');
         doc.text(n,schX+ci*schSz+schSz/2,sy+ri*schSz+schSz/2+2,{align:"center"});
     }));
-    doc.setFontSize(9);doc.setFont("helvetica","normal");
-    doc.text("Section Map",105,sy+schSz*2+6,{align:"center"});
+    doc.setFontSize(9);doc.setFont("DejaVuSans","normal");
+    doc.text("Карта секций",105,sy+schSz*2+6,{align:"center"});
 
-    const cellMm=gridSize===32?6.8:gridSize===48?4.5:3.2;
+    // ── Страница 2: рекомендации, предупреждения и всего деталей по цветам ──
+    doc.addPage();
+    let yy=20;
+    doc.setTextColor(0,0,0);doc.setFont("DejaVuSans","bold");doc.setFontSize(22);
+    doc.text("COVRICK",105,yy,{align:"center"}); yy+=8;
+    doc.setFont("DejaVuSans","normal");doc.setFontSize(13);
+    doc.text("Рекомендации и меры предосторожности",105,yy,{align:"center"}); yy+=13;
+
+    const infoBlock=(title,lines)=>{
+        doc.setFont("DejaVuSans","bold");doc.setFontSize(12);
+        doc.text(title,15,yy); yy+=6;
+        doc.setFont("DejaVuSans","normal");doc.setFontSize(10);
+        lines.forEach(t=>{
+            const wrapped=doc.splitTextToSize("•  "+t,180);
+            doc.text(wrapped,15,yy); yy+=wrapped.length*5;
+        });
+        yy+=5;
+    };
+    infoBlock("Как собирать",[
+        "Собирайте картину по секциям, сверяясь с картой секций на первой странице.",
+        "Каждая ячейка на схеме отмечена номером цвета — ставьте блок 1×1 нужного цвета.",
+        "В среднем сборка занимает от 2 до 4 часов.",
+        "В наборе есть запасные детали (примерно 10–15%) — если пара деталей потеряется, вы спокойно закончите сборку.",
+    ]);
+    infoBlock("Меры предосторожности",[
+        "Возрастное ограничение: 12+.",
+        "Набор содержит большое количество мелких деталей (блоки 1×1). Храните конструктор в недоступном для маленьких детей месте, чтобы исключить риск проглатывания деталей или попадания их в дыхательные пути.",
+    ]);
+    infoBlock("Хранение",[
+        "Храните детали в сухом месте.",
+        "Избегайте длительного воздействия прямых солнечных лучей (чтобы пластик не выцветал) и высоких температур.",
+    ]);
+
+    // Всего деталей по цветам (по всей картине)
+    const totals={};
+    finalPixels.forEach(c=>{ totals[c.id]=(totals[c.id]||0)+1; });
+    yy+=2;
+    doc.setFont("DejaVuSans","bold");doc.setFontSize(13);
+    doc.text(`Всего деталей: ${gridSize*gridSize} шт.`,15,yy); yy+=7;
+    doc.setFontSize(11);doc.text("Количество деталей каждого цвета:",15,yy); yy+=7;
+    const totIds=Object.keys(totals).sort((a,b)=>+a-+b);
+    doc.setFont("DejaVuSans","normal");doc.setFontSize(9);
+    // Двухколоночный список с автопереносом: колонка вниз до низа, затем вторая,
+    // затем новая страница — чтобы влезло любое число цветов (вплоть до 50).
+    const tColW=95,tStartX=15,tSq=3.5,tRowH=5.2,tBottom=285;
+    let tCol=0,tTopY=yy,tCurY=yy;
+    totIds.forEach(id=>{
+        if(tCurY>tBottom){
+            tCol++;
+            if(tCol>1){ doc.addPage(); tCol=0; tTopY=20; }
+            tCurY=tTopY;
+        }
+        const x=tStartX+tCol*tColW;
+        const c=palette.find(p=>p.id==id);
+        doc.setFillColor(c.hex);doc.rect(x,tCurY-3,tSq,tSq,'F');
+        doc.setDrawColor(200,200,200);doc.rect(x,tCurY-3,tSq,tSq,'S');
+        doc.setTextColor(0,0,0);
+        doc.text(`${id}. ${c.name} — ${totals[id]} шт.`,x+tSq+2,tCurY);
+        tCurY+=tRowH;
+    });
+
     const sectors=[
-        {name:"Section 1",offsetX:0,   offsetY:0   },
-        {name:"Section 2",offsetX:0,   offsetY:half},
-        {name:"Section 3",offsetX:half,offsetY:0   },
-        {name:"Section 4",offsetX:half,offsetY:half},
+        {name:"Секция 1",offsetX:0,   offsetY:0   },
+        {name:"Секция 2",offsetX:0,   offsetY:half},
+        {name:"Секция 3",offsetX:half,offsetY:0   },
+        {name:"Секция 4",offsetX:half,offsetY:half},
     ];
     sectors.forEach(sec=>{
         doc.addPage();
-        doc.setTextColor(0,0,0);doc.setFont("helvetica","bold");doc.setFontSize(20);
-        doc.text("COVRICK-EDITOR",105,15,{align:"center"});
-        doc.setFontSize(18);doc.text(sec.name,105,25,{align:"center"});
+        doc.setTextColor(0,0,0);doc.setFont("DejaVuSans","bold");doc.setFontSize(20);
+        doc.text("COVRICK",105,15,{align:"center"});
+        doc.setFontSize(16);doc.text(sec.name,105,24,{align:"center"});
+
+        // Пиксели секции + подсчёт деталей
         const parts={},px=[];
         for(let y=0;y<half;y++){
             const row=[];
@@ -1222,26 +1285,50 @@ downloadPdfBtn.addEventListener('click',()=>{
             }
             px.push(row);
         }
-        doc.setFontSize(11);doc.setFont("helvetica","bold");doc.text("Parts List:",15,40);
-        doc.setFont("helvetica","normal");doc.setFontSize(9);
-        let specY=48;const sq=3.5;
-        Object.keys(parts).sort((a,b)=>+a-+b).forEach(id=>{
-            const c=palette.find(p=>p.id==id);
-            doc.setFillColor(c.hex);doc.rect(15,specY-3,sq,sq,'F');
-            doc.setDrawColor(200,200,200);doc.rect(15,specY-3,sq,sq,'S');
-            doc.setTextColor(0,0,0);
-            doc.text(`${id}. ${c.name} — ${parts[id]} pcs`,20,specY);
-            specY+=5;
-        });
-        const gx=88,gy=40;doc.setFontSize(8);
+
+        // ── Крупная сетка с нумерацией столбцов и строк ──
+        const gutter=7;                                  // место под номера строк/столбцов
+        const gLeft=15+gutter, gTop=36, gW=180-gutter, cell=gW/half;
+        // Нумерация: столбцы сверху, строки слева
+        doc.setTextColor(40,40,40);doc.setFont("DejaVuSans","bold");
+        doc.setFontSize(Math.max(4.5,Math.min(7,cell*0.82)));
+        for(let i=0;i<half;i++){
+            doc.text((i+1).toString(),gLeft+i*cell+cell/2,gTop-1.6,{align:"center"});
+            doc.text((i+1).toString(),gLeft-1.8,gTop+i*cell+cell/2+0.3,{align:"right",baseline:"middle"});
+        }
+        // Ячейки
+        doc.setLineWidth(0.15);
+        doc.setFontSize(Math.max(5.5,Math.min(11,cell*1.05)));
         for(let y=0;y<half;y++) for(let x=0;x<half;x++){
             const c=px[y][x];
-            doc.setFillColor(c.hex);doc.rect(gx+x*cellMm,gy+y*cellMm,cellMm,cellMm,'F');
-            doc.setDrawColor(180,180,180);doc.rect(gx+x*cellMm,gy+y*cellMm,cellMm,cellMm,'S');
+            doc.setFillColor(c.hex);doc.rect(gLeft+x*cell,gTop+y*cell,cell,cell,'F');
+            doc.setDrawColor(180,180,180);doc.rect(gLeft+x*cell,gTop+y*cell,cell,cell,'S');
             const br=(c.r*299+c.g*587+c.b*114)/1000;
             doc.setTextColor(br>125?0:255);
-            doc.text(c.id.toString(),gx+x*cellMm+cellMm/2,gy+y*cellMm+cellMm/2+1,{align:"center",baseline:"middle"});
+            doc.text(c.id.toString(),gLeft+x*cell+cell/2,gTop+y*cell+cell/2+0.3,{align:"center",baseline:"middle"});
         }
+
+        // ── Список деталей под сеткой, в несколько колонок ──
+        const listTop=gTop+gW+10;
+        doc.setTextColor(0,0,0);doc.setFont("DejaVuSans","bold");doc.setFontSize(11);
+        doc.text("Список деталей:",15,listTop);
+        const ids=Object.keys(parts).sort((a,b)=>+a-+b);
+        const rowH=4.6, sq=3.2, avail=286-(listTop+6);
+        const maxRows=Math.max(1,Math.floor(avail/rowH));
+        const cols=Math.max(3,Math.ceil(ids.length/maxRows));
+        const colW=180/cols, rowsPerCol=Math.ceil(ids.length/cols);
+        doc.setFont("DejaVuSans","normal");
+        doc.setFontSize(cols<=3?8.5:cols===4?7.5:6.5);
+        const ly0=listTop+6;
+        ids.forEach((id,i)=>{
+            const col=Math.floor(i/rowsPerCol), row=i%rowsPerCol;
+            const x=15+col*colW, y=ly0+row*rowH;
+            const c=palette.find(p=>p.id==id);
+            doc.setFillColor(c.hex);doc.rect(x,y-3,sq,sq,'F');
+            doc.setDrawColor(200,200,200);doc.rect(x,y-3,sq,sq,'S');
+            doc.setTextColor(0,0,0);
+            doc.text(`${id}. ${c.name} — ${parts[id]} шт.`,x+sq+1.5,y);
+        });
     });
     doc.save(`COVRICK-${gridSize}x${gridSize}.pdf`);
 });
