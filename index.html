@@ -61,7 +61,7 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 10px; color: var(--text-muted); overflow: hidden;
         }
-        .logo-img img { width: 100%; height: 100%; object-fit: cover; }
+        .logo-img img { width: 100%; height: 100%; object-fit: contain; filter: invert(1); }
 
         .brand-name {
             font-size: 28px; font-weight: 800;
@@ -408,12 +408,12 @@
     <!-- Кастомный курсор — LEGO-кубик -->
 
     <header>
-        <div class="logo-container">
+        <a href="#" class="logo-container" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">
             <div class="logo-img">
-                <img src="logo.png" alt="COVRICK Logo">
+                <img src="logomini.svg" alt="COVRICK Logo">
             </div>
             <div class="brand-name">COVRICK</div>
-        </div>
+        </a>
 
         <div class="menu-btn" id="menu-btn">
             <span></span>
