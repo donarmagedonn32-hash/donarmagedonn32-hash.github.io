@@ -465,6 +465,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="covrick-fonts.js"></script>
+<script src="covrick-watermark.js"></script>
 <script>
 const { jsPDF } = window.jspdf;
 
@@ -1330,6 +1331,20 @@ downloadPdfBtn.addEventListener('click',()=>{
             doc.text(`${id}. ${c.name} — ${parts[id]} шт.`,x+sq+1.5,y);
         });
     });
+
+    // ── Водяной знак (логотип) снизу справа на каждой странице ──
+    if(window.COVRICK_WATERMARK){
+        const props=doc.getImageProperties(window.COVRICK_WATERMARK);
+        const wmW=24, wmH=wmW*(props.height/props.width); // мм, с сохранением пропорций
+        const total=doc.getNumberOfPages();
+        for(let p=1;p<=total;p++){
+            doc.setPage(p);
+            doc.setGState(new doc.GState({opacity:0.12}));
+            doc.addImage(window.COVRICK_WATERMARK,'PNG',210-12-wmW,297-10-wmH,wmW,wmH);
+            doc.setGState(new doc.GState({opacity:1}));
+        }
+    }
+
     doc.save(`COVRICK-${gridSize}x${gridSize}.pdf`);
 });
 </script>
